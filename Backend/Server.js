@@ -3,6 +3,7 @@ import cookieParser from "cookie-parser";
 import express from "express";
 import cors from "cors";
 import { connectDB } from "./config/db";
+import userRoutes from "./routes/userRoute.js";
 
 dotenv.config();
 
@@ -18,10 +19,15 @@ app.use(
   })
 );
 
-app.use(express.json({ limit: "10kb" }));
+app.use(express.json()); // For parsing application/json
+app.use(express.urlencoded({ extended: true })); // For parsing application/x-www-form-urlencoded
+
 
 app.use(cookieParser());
 connectDB();
+
+// 🔹 User Routes
+app.use("/api/v1/users", userRoutes);
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);

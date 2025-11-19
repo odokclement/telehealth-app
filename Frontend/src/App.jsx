@@ -10,7 +10,7 @@ import ForgotPass from "./pages/Auth/Login/ForgotPass";
 import VerifyAcct from "./pages/Auth/Login/VerrifyAcc";
 
 // Dashboard
-// import Dashboard from "./pages/Dashboard/Dashboard";
+import Dashboard from "./pages/Dashboard/dashboard";
 import VideoStream from "./components/VideoStream";
 import { StreamProvider } from "./components/StreamContext";
 
@@ -35,7 +35,7 @@ const router = createBrowserRouter([
   {
     element: <StreamLayout />,
     children: [
-      // { path: "dashboard", element: <Dashboard /> },
+      { path: "dashboard", element: <Dashboard /> },
       { path: "videoCall", element: <VideoStream /> },
     ],
   },

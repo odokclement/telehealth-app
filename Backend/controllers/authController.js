@@ -53,9 +53,10 @@ export const signup = catchAsync(async (req, res, next) => {
   const existingUser = await User.findOne({ email });
   if (existingUser) return next(new AppError("Email already registered", 400));
 
-  // Generate OTP (valid for 24 hrs)
-  const otp = generateOtp();
-  const otpExpires = Date.now() + 24 * 60 * 60 * 1000;
+ // Generate OTP (valid 5 minutes)
+const otp = generateOtp();
+const otpExpires = new Date(Date.now() + 5 * 60 * 1000); // 5 min
+
 
   // Create new user
   const newUser = await User.create({
@@ -85,9 +86,7 @@ export const signup = catchAsync(async (req, res, next) => {
     );
   }
 });
-// verifyEmail
 export const verifyEmail = catchAsync(async (req, res, next) => {
-  console.log("Request body:", req.body);
   const { email, otp } = req.body;
 
   if (!email || !otp) {
@@ -95,15 +94,14 @@ export const verifyEmail = catchAsync(async (req, res, next) => {
   }
 
   const user = await User.findOne({ email });
-  if (!user) {
-    return next(new AppError("User not found", 404));
-  }
+  if (!user) return next(new AppError("User not found", 404));
 
   if (user.otp !== otp) {
     return next(new AppError("Invalid OTP", 400));
   }
 
-  if (user.otpExpires < Date.now()) {
+  //  EXPIRY CHECK FIXED
+  if (user.otpExpires.getTime() < Date.now()) {
     return next(new AppError("OTP has expired", 400));
   }
 
@@ -117,6 +115,43 @@ export const verifyEmail = catchAsync(async (req, res, next) => {
     message: "Email verified successfully",
   });
 });
+
+//resend token controller
+export const resendOtp = catchAsync(async (req, res, next) => {
+  const { email } = req.body;
+
+  if (!email) {
+    return next(new AppError("Email is required", 400));
+  }
+
+  const user = await User.findOne({ email });
+  if (!user) {
+    return next(new AppError("User not found", 404));
+  }
+
+  // Generate new OTP and expiry for 5 minutes
+  const newOtp = generateOtp();
+  const newOtpExpires = new Date(Date.now() + 5 * 60 * 1000);
+
+  user.otp = newOtp;
+  user.otpExpires = newOtpExpires;
+
+  await user.save({ validateBeforeSave: false });
+
+  // Send OTP email
+  await sendEmail({
+    email: user.email,
+    subject: "New OTP Code",
+    html: `<h1>Your new OTP is: ${newOtp}</h1>`,
+  });
+
+  res.status(200).json({
+    status: "success",
+    message: "OTP resent successfully",
+  });
+});
+
+
 
 //login controller
 
@@ -179,6 +214,70 @@ export const logout = catchAsync(async (req, res, next) => {
     message: "Logged out successfully",
   });
 });
+
+// forgot password controller
+export const forgetPassword = catchAsync(async (req, res, next) => {
+  const { email } = req.body;
+
+  const user = await User.findOne({ email });
+
+  if (!user) {
+    return next(new AppError("No user found", 404));
+  }
+
+  const otp = generateOtp();
+
+  user.resetPasswordOTP = otp;
+  user.resetPasswordOTPExpires = Date.now() + 5 * 60 * 1000; // 5 mins
+
+  await user.save({ validateBeforeSave: false });
+
+  try {
+    await sendEmail({
+      email: user.email,
+      subject: "Your Password Reset OTP (Valid for 5 Minutes)",
+      html: `<h1>Your password reset OTP is: <b>${otp}</b></h1>`,
+    });
+
+    res.status(200).json({
+      status: "success",
+      message: "Password reset OTP sent to your email",
+    });
+  } catch (error) {
+    user.resetPasswordOTP = undefined;
+    user.resetPasswordOTPExpires = undefined;
+    await user.save({ validateBeforeSave: false });
+
+    return next(new AppError("Error sending email. Try again later.", 500));
+  }
+});
+// reset password controller
+export const resetPassword = catchAsync(async (req, res, next) => {
+  const { email, otp, password, passwordConfirm } = req.body;
+
+  // Validate
+  const user = await User.findOne({
+    email,
+    resetPasswordOTP: otp,
+    resetPasswordOTPExpires: { $gt: Date.now() },
+  });
+
+  if (!user) {
+    return next(new AppError("Invalid or expired OTP", 400));
+  }
+
+  // Update password
+  user.password = password;
+  user.passwordConfirm = passwordConfirm;
+  user.resetPasswordOTP = undefined;
+  user.resetPasswordOTPExpires = undefined;
+
+  await user.save();
+
+  // Send token after password reset
+  createSendToken(user, 200, res, "Password reset successfully");
+});
+
 
 
 

@@ -2,7 +2,7 @@ import  { useState, useRef } from 'react'
 import { Link } from 'react-router-dom'
 
 function ForgotPass() {
-  const [code, setCode] = useState(['', '', '', ''])
+  const [code, setCode] = useState(['', '', '', '', '', ''])
   const inputsRef = useRef([])
 
   const handleChange = (value, index) => {
@@ -10,7 +10,7 @@ function ForgotPass() {
     const newCode = [...code]
     newCode[index] = value
     setCode(newCode)
-    if (value && index < 3) {
+    if (value && index < 5) {
       inputsRef.current[index + 1].focus()
     }
   }

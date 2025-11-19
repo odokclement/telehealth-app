@@ -15,7 +15,7 @@ import { useStream } from "../../hooks/useStream";
 
 const apiKey = import.meta.env.VITE_STREAM_API_KEY;
 
-function App() {
+function Dashboard() {
   const { user, token, Logout } = useStream();
   const [channel, setChannel] = useState(null);
   const [clientReady, setClientReady] = useState(false);
@@ -93,4 +93,4 @@ function App() {
   );
 }
 
-export default App;
+export default Dashboard;

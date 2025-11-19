@@ -1,11 +1,11 @@
-import  { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useNavigate, Link } from "react-router-dom";
-import   { clearPendingEmail } from "../../../store/authSlice";
+import { clearPendingEmail } from "../../../store/authSlice";
 import { axiosInstance } from "../../../lib/axios";
 
 function VerifyAcct() {
-  const [code, setCode] = useState(["", "", "", ""]);
+  const [code, setCode] = useState(["", "", "", "", "", ""]);
   const [loading, setLoading] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
   const [timer, setTimer] = useState(60);
@@ -18,21 +18,21 @@ function VerifyAcct() {
   useEffect(() => {
     let interval;
     if (timer > 0) {
-      interval = setInterval(() => setTimer((prev) => prev - 1), 1000);
+      interval = setInterval(() => setTimer((prev) => prev - 1), 3000);
     }
     return () => clearInterval(interval);
   }, [timer]);
-
+// Handle input change and move focus to next input
   const handleChange = (value, index) => {
     if (!/^\d*$/.test(value)) return;
     const newCode = [...code];
     newCode[index] = value;
     setCode(newCode);
-    if (value && index < 3) {
+    if (value && index < 5) {
       inputsRef.current[index + 1].focus();
     }
   };
-
+  // Handle backspace to move focus to previous input
   const handleKeyDown = (e, index) => {
     if (e.key === "Backspace" && !code[index] && index > 0) {
       inputsRef.current[index - 1].focus();
